@@ -1,0 +1,16 @@
+{
+  "name": "go-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "bulid": "yarn vercel build",
+    "setup": "yarn vercel login && yarn vercel link",
+    "start": "yarn vercel dev",
+    "dev": "yarn start"
+  },
+  "dependencies": {
+    "@vercel/build-utils": "^5.5.5",
+    "vercel": "^28.4.12"
+  }
+}
