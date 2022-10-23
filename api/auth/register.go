@@ -17,6 +17,8 @@ func UserRegister(w http.ResponseWriter, r *http.Request) {
 
 	case "POST":
 		handler.Register(w, r)
+	case "GET":
+		handler.Register(w, r)
 
 	default:
 		http.Error(w, "method "+r.Method+" not allowed", http.StatusBadRequest)
