@@ -16,8 +16,6 @@ func UserLogout(w http.ResponseWriter, r *http.Request) {
 
 	case "POST":
 		handler.Logout(w, r)
-	case "GET":
-		handler.Logout(w, r)
 
 	default:
 		http.Error(w, "method "+r.Method+" not allowed", http.StatusBadRequest)

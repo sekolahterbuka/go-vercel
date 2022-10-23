@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/sekolahkita/go-api/server/model"
+	"github.com/sekolahkita/go-api/server/serializer/json"
 	"github.com/sekolahkita/go-api/server/utils"
 )
 
@@ -40,13 +42,38 @@ func NewAuthHandler(c *AuthConfig) *authHandler {
 // }
 
 func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("error")
+	}
+
+	data, err := json.Decode[model.RegisterParams](reqBody)
+	if err != nil {
+		log.Println("error")
+	}
+
 	ctx := r.Context()
-	_, err := h.AuthService.Register(ctx, model.RegisterParams{Username: "sanja", Email: "email", Password: "pasword"})
+	result, err := h.AuthService.Register(ctx, model.RegisterParams{
+		Username: data.Username,
+		Email:    data.Email,
+		Password: data.Password,
+	})
+	if err != nil {
+		log.Println("notfound")
+	}
+	log.Printf("%v save to database", result)
+
+	resJson, err := json.Encode[model.Auth](&model.Auth{
+		UID:      uuid.New(),
+		Username: data.Username,
+		Email:    data.Email,
+		Password: data.Password,
+	})
 	if err != nil {
 		log.Println("notfound")
 	}
 
-	w.Write([]byte("Hello register"))
+	w.Write([]byte(resJson))
 }
 
 func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +85,17 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		log.Println("notfound")
 	}
 
-	w.Write([]byte("Hello Login"))
+	resJson, err := json.Encode[model.Auth](&model.Auth{
+		UID:      uuid.New(),
+		Username: "sanja",
+		Email:    "sanja@mail.com",
+		Password: "pasword",
+	})
+	if err != nil {
+		log.Println("notfound")
+	}
+
+	w.Write([]byte(resJson))
 }
 
 func (h *authHandler) Logout(w http.ResponseWriter, r *http.Request) {

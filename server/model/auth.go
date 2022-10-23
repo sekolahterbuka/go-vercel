@@ -8,7 +8,7 @@ import (
 
 type Auth struct {
 	UID      uuid.UUID `json:"uid"`
-	Username string    `json:"name"`
+	Username string    `json:"username"`
 	Email    string    `json:"email"`
 	Password string    `json:"-"`
 }
@@ -16,7 +16,7 @@ type Auth struct {
 type RegisterParams struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
-	Password string `json:"password"`
+	Password string `json:"-"`
 }
 
 type AuthSerializer interface {

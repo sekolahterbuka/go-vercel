@@ -17,8 +17,6 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 
 	case "POST":
 		handler.Login(w, r)
-	case "GET":
-		handler.Login(w, r)
 
 	default:
 		http.Error(w, "method "+r.Method+" not allowed", http.StatusBadRequest)
