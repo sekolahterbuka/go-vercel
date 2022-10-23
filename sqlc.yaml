@@ -1,0 +1,12 @@
+version: "1"
+packages:
+  - name: "postgres"
+    path: "server/repository/postgres/sqlc"
+    queries: "./server/repository/postgres/query/"
+    schema: "./server/repository/postgres/schema/"
+    engine: "postgresql"
+    emit_json_tags: true
+    emit_prepared_queries: true
+    emit_interface: true
+    emit_exact_table_names: false
+    emit_empty_slices: true

@@ -2,12 +2,16 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/sekolahkita/go-api/server/handler"
 )
 
 func init() {
-
 }
 
 func Chi(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World!sssss"))
+	handler := handler.NewHandler()
+
+	handler.Me(w, r)
+
 }
