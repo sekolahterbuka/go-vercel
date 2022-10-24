@@ -1,14 +1,25 @@
 package handler
 
 import (
+	"database/sql"
 	"net/http"
 
+	_ "github.com/lib/pq"
 	"github.com/sekolahkita/go-api/server/handler"
+	"github.com/sekolahkita/go-api/server/repository"
 	"github.com/sekolahkita/go-api/server/service"
 )
 
 func UserRegister(w http.ResponseWriter, r *http.Request) {
-	service := service.NewAuthService(&service.AuthConfig{})
+
+	db, err := sql.Open("postgres", repository.PgConn)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
+	service := service.NewAuthService(&service.AuthConfig{Querier: repo})
 	handler := handler.NewAuthHandler(&handler.AuthConfig{
 		AuthService: service,
 	})

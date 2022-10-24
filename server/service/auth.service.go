@@ -4,39 +4,47 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/sekolahkita/go-api/server/model"
+	pg "github.com/sekolahkita/go-api/server/repository/postgres/sqlc"
 )
 
 type authService struct {
-	// AuthRepository model.AuthRepository
+	Querier pg.Querier
 }
 
 type AuthConfig struct {
-	// AuthRepository model.AuthRepository
+	Querier pg.Querier
 }
 
 func NewAuthService(c *AuthConfig) *authService {
-	return &authService{}
+	return &authService{
+		Querier: c.Querier,
+	}
 }
 
-func (s authService) Register(ctx context.Context, arg model.RegisterParams) (model.Auth, error) {
-	// user, err := s.AuthRepository.Register(ctx, arg)
+func (s authService) Login(ctx context.Context, id uuid.UUID) (pg.Auth, error) {
 
-	// if err != nil {
-	// 	return model.Auth{}, err
-	// }
-	user := model.Auth{}
-	return user, nil
+	data, err := s.Querier.Login(ctx, id)
+	if err != nil {
+		return pg.Auth{}, err
+	}
+
+	return data, nil
 }
 
-func (s authService) Login(ctx context.Context, id uuid.UUID) (model.Auth, error) {
-	// user, err := s.AuthRepository.Login(ctx, id)
+func (s authService) Register(ctx context.Context, arg pg.RegisterParams) (pg.Auth, error) {
+	data, err := s.Querier.Register(ctx, pg.RegisterParams{
+		Username: arg.Username,
+		Email:    arg.Email,
+		Password: arg.Password,
+	})
 
-	// if err != nil {
-	// 	return model.Auth{}, err
-	// }
-	user := model.Auth{}
+	if err != nil {
+		return pg.Auth{}, err
+	}
 
-	return user, nil
+	return data, nil
+}
 
+func (s authService) Logout(ctx context.Context) error {
+	return nil
 }

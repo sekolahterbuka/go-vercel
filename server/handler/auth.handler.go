@@ -6,16 +6,17 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/sekolahkita/go-api/server/model"
+	Interface "github.com/sekolahkita/go-api/server/interface"
+	pg "github.com/sekolahkita/go-api/server/repository/postgres/sqlc"
 	"github.com/sekolahkita/go-api/server/serializer/json"
 	"github.com/sekolahkita/go-api/server/utils"
 )
 
 type authHandler struct {
-	AuthService model.AuthService
+	AuthService Interface.AuthService
 }
 type AuthConfig struct {
-	AuthService model.AuthService
+	AuthService Interface.AuthService
 }
 
 func NewAuthHandler(c *AuthConfig) *authHandler {
@@ -33,66 +34,61 @@ func NewAuthHandler(c *AuthConfig) *authHandler {
 // 	}
 // }
 
-// func (h *authHandler) reqSerializer(contentType string) model.RegisterSerializer {
-// 	return &json.RegisterParams{}
-// }
-
-// func (h *authHandler) resSerializer(contentType string) model.AuthSerializer {
-// 	return &json.Auth{}
-// }
-
+// REGISTER
 func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("error")
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	data, err := json.Decode[model.RegisterParams](reqBody)
+	data, err := json.Decode[pg.RegisterParams](reqBody)
 	if err != nil {
 		log.Println("error")
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	ctx := r.Context()
-	result, err := h.AuthService.Register(ctx, model.RegisterParams{
+	result, err := h.AuthService.Register(ctx, pg.RegisterParams{
 		Username: data.Username,
 		Email:    data.Email,
 		Password: data.Password,
 	})
 	if err != nil {
 		log.Println("notfound")
+		w.WriteHeader(http.StatusConflict)
+		return
 	}
 	log.Printf("%v save to database", result)
 
-	resJson, err := json.Encode[model.Auth](&model.Auth{
-		UID:      uuid.New(),
-		Username: data.Username,
-		Email:    data.Email,
-		Password: data.Password,
-	})
+	resJson, err := json.Encode[pg.Auth](&result)
 	if err != nil {
 		log.Println("notfound")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Write([]byte(resJson))
 }
 
 func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
-	_ = utils.GetQuery(r, "id")
-
 	ctx := r.Context()
-	_, err := h.AuthService.Login(ctx, uuid.New())
+	paramsId := utils.GetQuery(r, "id")
+
+	res, err := h.AuthService.Login(ctx, uuid.MustParse(paramsId))
 	if err != nil {
 		log.Println("notfound")
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
-	resJson, err := json.Encode[model.Auth](&model.Auth{
-		UID:      uuid.New(),
-		Username: "sanja",
-		Email:    "sanja@mail.com",
-		Password: "pasword",
-	})
+	resJson, err := json.Encode[pg.Auth](&res)
 	if err != nil {
 		log.Println("notfound")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Write([]byte(resJson))

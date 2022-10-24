@@ -1,6 +1,6 @@
 version: "1"
 packages:
-  - name: "postgres"
+  - name: "pg"
     path: "server/repository/postgres/sqlc"
     queries: "./server/repository/postgres/query/"
     schema: "./server/repository/postgres/schema/"
