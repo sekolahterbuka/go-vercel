@@ -1,15 +1,16 @@
 package handler
 
 import (
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	Interface "github.com/sekolahkita/go-api/server/interface"
 	pg "github.com/sekolahkita/go-api/server/repository/postgres/sqlc"
 	"github.com/sekolahkita/go-api/server/serializer/json"
-	"github.com/sekolahkita/go-api/server/utils"
+	"github.com/sekolahkita/go-api/server/util"
+	apperrors "github.com/sekolahkita/go-api/server/util/apperror"
 )
 
 type authHandler struct {
@@ -25,75 +26,80 @@ func NewAuthHandler(c *AuthConfig) *authHandler {
 	}
 }
 
-// func setupResponse(w http.ResponseWriter, contentType string, body []byte, statusCode int) {
-// 	w.Header().Set("Content-Type", contentType)
-// 	w.WriteHeader(statusCode)
-// 	_, err := w.Write(body)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// }
+type RegisterParams struct {
+	Username string `json:"username" validate:"required,min=2,max=30"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6,max=50"`
+}
 
 // REGISTER
 func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("error")
-		w.WriteHeader(http.StatusBadRequest)
+		apperrors.NewInternal(w)
 		return
 	}
 
-	data, err := json.Decode[pg.RegisterParams](reqBody)
+	//body parser
+	payload, err := json.Decode[RegisterParams](reqBody)
 	if err != nil {
-		log.Println("error")
-		w.WriteHeader(http.StatusBadRequest)
+		apperrors.NewBadRequest(w, "invalid Input")
 		return
 	}
 
+	//Validator
+	validate := validator.New()
+	errValidate := validate.Struct(payload)
+	if errValidate != nil {
+		apperrors.NewBadRequest(w, errValidate.Error())
+		return
+	}
+
+	//Register Service
 	result, err := h.AuthService.Register(ctx, pg.RegisterParams{
-		Username: data.Username,
-		Email:    data.Email,
-		Password: data.Password,
+		Username: payload.Username,
+		Email:    payload.Email,
+		Password: payload.Password,
 	})
 	if err != nil {
-		log.Println("notfound")
-		w.WriteHeader(http.StatusConflict)
+		apperrors.NewConflict(w, "value", payload.Username)
 		return
 	}
-	log.Printf("%v save to database", result)
 
-	resJson, err := json.Encode[pg.Auth](&result)
+	//Encode Json Response
+	resJson, err := json.Encode(&result)
 	if err != nil {
-		log.Println("notfound")
-		w.WriteHeader(http.StatusInternalServerError)
+		apperrors.NewInternal(w)
 		return
 	}
 
-	w.Write([]byte(resJson))
+	util.SetupResponse(w, []byte(resJson), http.StatusCreated)
 }
 
+// LOGIN
 func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	paramsId := utils.GetQuery(r, "id")
+	paramsId := util.GetQuery(r, "id")
 
+	//Login Service
 	res, err := h.AuthService.Login(ctx, uuid.MustParse(paramsId))
 	if err != nil {
-		log.Println("notfound")
-		w.WriteHeader(http.StatusNotFound)
+		apperrors.NewNotFound(w, "identifier", paramsId)
 		return
 	}
 
-	resJson, err := json.Encode[pg.Auth](&res)
+	//Encode Json Response
+	resJson, err := json.Encode(&res)
 	if err != nil {
-		log.Println("notfound")
-		w.WriteHeader(http.StatusInternalServerError)
+		apperrors.NewInternal(w)
 		return
 	}
 
-	w.Write([]byte(resJson))
+	util.SetupResponse(w, []byte(resJson), http.StatusOK)
 }
 
+// LOGOUT
 func (h *authHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello Logout"))
+	util.SetupResponse(w, []byte("success"), http.StatusOK)
 }
